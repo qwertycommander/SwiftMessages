@@ -463,6 +463,29 @@ open class SwiftMessages {
             counts[id] = nil
         }
     }
+    
+    /**
+     Hide a message that contains the given string `id`. If the specified message is
+     currently being displayed, it will be animated away. Works with message
+     views, such as `MessageView`, that adopt the `Identifiable` protocol.
+     - Parameter id: The identifier of the message to remove.
+     */
+    open func hideThatContains(fragment: String) {
+        messageQueue.sync {
+            if let currentID = _current?.id, currentID.contains(fragment) {
+                hideCurrent()
+            }
+            queue = queue.filter { !$0.id.contains(fragment) }
+            
+            delays.removeWithFragment(fragment: fragment)
+            for (k, _) in counts {
+                if k.contains(fragment) {
+                    counts[k] = nil
+                }
+            }
+        }
+    }
+
 
     /**
      Hide the message when the number of calls to show() and hideCounted(id:) for a
@@ -531,6 +554,10 @@ open class SwiftMessages {
 
         fileprivate func remove(id: String) {
             presenters = presenters.filter { $0.id != id }
+        }
+        
+        fileprivate func removeWithFragment(fragment: String) {
+            presenters = presenters.filter { !$0.id.contains(fragment) }
         }
 
         fileprivate func removeAll() {
@@ -898,6 +925,10 @@ extension SwiftMessages {
 
     public static func hideCounted(id: String) {
         globalInstance.hideCounted(id: id)
+    }
+    
+    public static func hideThatContains(fragment: String) {
+        globalInstance.hideThatContains(fragment: fragment)
     }
 
     public static var defaultConfig: Config {
